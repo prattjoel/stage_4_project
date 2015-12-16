@@ -1,0 +1,189 @@
+import urllib
+import webapp2
+
+from google.appengine.ext import db
+from google.appengine.api import users
+
+import jinja2
+import os
+
+
+template_dir = os.path.join(os.path.dirname(__file__), "templates")
+
+jinja_environment = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
+                                                                    autoescape = True)
+
+class Handler(webapp2.RequestHandler):
+    def write(self, *a, **kw):
+        self.response.out.write(*a, **kw)
+
+    def render_str(self, template, **params):
+        t = jinja_environment.get_template(template)
+        return t.render(params)
+
+    def render(self, template, **kw):
+        self.write(self.render_str(template, **kw))
+
+class Greeting(db.Model):
+  """Models an individual Guestbook entry with an author, content, and date."""
+  author = db.StringProperty()
+  content = db.StringProperty(multiline=True, indexed=False)
+  date = db.DateTimeProperty(auto_now_add=True)
+
+
+def _GuestbookKey(guestbook_name=None):
+  """Constructs a Datastore key for a Guestbook entity with guestbook_name."""
+  return db.Key.from_path('Guestbook', guestbook_name)
+
+
+guestbook_one = 'lesson_one_guestbook'
+
+class MainPage(Handler):
+
+    def get(self):  # pylint:disable-msg=invalid-name
+        """Handle GET requests."""
+        guestbook_name = self.request.get('guestbook_name', guestbook_one)
+        greetings_query = Greeting.all().ancestor(
+            _GuestbookKey(guestbook_name)).order('-date')
+        greetings = greetings_query.fetch(10)
+        error = self.request.get("error")
+
+        if users.get_current_user():
+          url = users.create_logout_url(self.request.uri)
+          url_linktext = 'Logout'
+        else:
+          url = users.create_login_url(self.request.uri)
+          url_linktext = 'Login'
+
+        template_values = {
+            'greetings': greetings,
+            'guestbook_name': urllib.quote_plus(guestbook_name),
+            'url': url,
+            'url_linktext': url_linktext,
+            "error": error,
+        }
+
+        template = jinja_environment.get_template('lesson_one.html',)
+        self.response.out.write(template.render(template_values))
+
+    def post(self):  
+        """Handle POST requests."""
+        guestbook_name = self.request.get('guestbook_name', guestbook_one)
+        greeting = Greeting(parent=_GuestbookKey(guestbook_name))
+        
+
+        if users.get_current_user():
+            greeting.author = users.get_current_user().nickname()
+
+        greeting.content = self.request.get('content')
+        if greeting.content.strip():
+            greeting.put()
+            query_params = {'guestbook_name': guestbook_name,}
+        else:
+            error = "Please enter text to leave a comment"
+            query_params = {'guestbook_name': guestbook_name, "error": error}
+        self.redirect('/?' + urllib.urlencode(query_params))
+
+guestbook_two = 'lesson_two_guestbook'
+
+class LessonTwo(Handler):
+    
+    def get(self):
+        """Handle GET requests."""
+        guestbook_name = self.request.get('guestbook_name', guestbook_two)
+        greetings_query = Greeting.all().ancestor(
+            _GuestbookKey(guestbook_name)).order('-date')
+        greetings = greetings_query.fetch(10)
+        error = self.request.get("error")
+
+        if users.get_current_user():
+            url = users.create_logout_url(self.request.uri)
+            url_linktext = 'Logout'
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_linktext = 'Login'
+
+        template_values = {
+            'greetings': greetings,
+            'guestbook_name': urllib.quote_plus(guestbook_name),
+            'url': url,
+            'url_linktext': url_linktext,
+            "error": error,
+        }  
+
+        template = jinja_environment.get_template('lesson_two.html',)
+        self.response.out.write(template.render(template_values))     
+    
+    def post(self):  
+        """Handle POST requests."""
+        guestbook_name = self.request.get('guestbook_name', guestbook_two)
+        greeting = Greeting(parent=_GuestbookKey(guestbook_name))
+        
+        if users.get_current_user():
+            greeting.author = users.get_current_user().nickname()
+
+        greeting.content = self.request.get('content')
+        if greeting.content.strip():
+            greeting.put()
+            query_params = {'guestbook_name': guestbook_name,}
+        else:
+            error = "Please enter text to leave a comment"
+            query_params = {'guestbook_name': guestbook_name, "error": error}
+        self.redirect('/lessontwo?' + urllib.urlencode(query_params))
+
+guestbook_three = 'lesson_three_guestbook'
+
+class LessonThree(Handler):
+    def get(self):  
+        """Handle GET requests."""
+        guestbook_name = self.request.get('guestbook_name', guestbook_three)
+        greetings_query = Greeting.all().ancestor(
+            _GuestbookKey(guestbook_name)).order('-date')
+        greetings = greetings_query.fetch(10)
+        error = self.request.get("error")
+
+        if users.get_current_user():
+          url = users.create_logout_url(self.request.uri)
+          url_linktext = 'Logout'
+        else:
+          url = users.create_login_url(self.request.uri)
+          url_linktext = 'Login'
+
+        template_values = {
+            'greetings': greetings,
+            'guestbook_name': urllib.quote_plus(guestbook_name),
+            'url': url,
+            'url_linktext': url_linktext,
+            "error": error,
+        }
+
+        template = jinja_environment.get_template('lesson_three.html',)
+        self.response.out.write(template.render(template_values))
+
+
+    def post(self):  
+        """Handle POST requests."""
+        guestbook_name = self.request.get('guestbook_name', guestbook_three)
+        greeting = Greeting(parent=_GuestbookKey(guestbook_name))
+        
+
+        if users.get_current_user():
+            greeting.author = users.get_current_user().nickname()
+
+        greeting.content = self.request.get('content')
+        if greeting.content.strip():
+            greeting.put()
+            query_params = {'guestbook_name': guestbook_name,}
+        else:
+            error = "Please enter text to leave a comment"
+            query_params = {'guestbook_name': guestbook_name, "error": error}
+        self.redirect('/lessonthree?' + urllib.urlencode(query_params))
+
+
+
+app = webapp2.WSGIApplication([("/", MainPage),
+                                ("/lessontwo", LessonTwo),
+                                ("/lessonthree", LessonThree)
+
+                                ],
+                              debug=True)
